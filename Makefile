@@ -7,14 +7,14 @@ all: compile
 compile:
 	@$(REBAR) compile
 
-run:
-	@$(REBAR) eunit && $(REBAR) shell
+run: compile test
+	@$(REBAR) shell
 
-test:
+test: compile
 	@$(REBAR) eunit
 
 clean:
 	@$(REBAR) clean
 
-dialyzer:
+dialyzer: compile
 	@dialyzer -nn -r ./_build/default/lib/aoc/ebin/

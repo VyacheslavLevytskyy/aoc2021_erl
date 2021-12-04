@@ -8,7 +8,8 @@
     read_ints/1,
     read_bits/1,
     read_cmds/1,
-    read_bingo/3
+    read_bingo/3,
+    read_xy/1
 ]).
 
 %%-------------------------------------------------------------------
@@ -50,7 +51,25 @@ read_bingo(Fn, NRows, NCols) ->
     end, {#{}, #{}, 1}, LCards),
     {Input, Numbers, Cards, #{}}.
 
+-spec read_xy(Fn :: string()) -> [{X1 :: integer(), Y1 :: integer(), X2 :: integer(), Y2 :: integer()}].
+read_xy(Fn) ->
+    lists:map(fun (Line) ->
+        [B1, _, B2] = binary:split(Line, [<<32>>], [global, trim_all]),
+        {X1, Y1} = read_xy_ints(B1),
+        {X2, Y2} = read_xy_ints(B2),
+        if
+            X1 == X2; Y1 == Y2 ->
+                {min(X1, X2), min(Y1, Y2), max(X1, X2), max(Y1, Y2)};
+            true ->
+                {X1, Y1, X2, Y2}
+        end
+    end, read_lines(Fn)).
+
 %%-------------------------------------------------------------------
+
+read_xy_ints(B) ->
+    [X, Y] = binary:split(B, [<<$,>>], []),
+    {binary_to_integer(X), binary_to_integer(Y)}.
 
 read_bingo_card(LCard, NRows, NCols) ->
     Rows = binary:split(LCard, [<<10>>], [global, trim_all]),
