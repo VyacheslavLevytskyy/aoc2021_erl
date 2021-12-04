@@ -17,4 +17,4 @@ clean:
 	@$(REBAR) clean
 
 dialyzer:
-	@dialyzer -nn -r ./ebin/
+	@dialyzer -nn -r ./_build/default/lib/aoc/ebin/

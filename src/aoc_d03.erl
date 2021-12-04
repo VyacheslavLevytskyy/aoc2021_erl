@@ -73,11 +73,11 @@ p2_loop(L = [_ | _], Mask, Most) ->
             p2_loop(L2, Mask bsr 1, Most)
     end;
 
-p2_loop([], _, _) ->
-    error(empty_list);
-
 p2_loop(_, 0, _) ->
-    error(multiple_values).
+    error(multiple_values);
+
+p2_loop([], _, _) ->
+    error(empty_list).
 
 p2_bit(L, Mask, Most) ->
     {Sum, Len} = lists:foldl(fun (I, {AccSum, AccLen}) ->
