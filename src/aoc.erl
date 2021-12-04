@@ -9,7 +9,8 @@
     read_bits/1,
     read_cmds/1,
     read_bingo/3,
-    read_xy/1
+    read_xy/1,
+    read_one_line_ints/1
 ]).
 
 %%-------------------------------------------------------------------
@@ -64,6 +65,10 @@ read_xy(Fn) ->
                 {X1, Y1, X2, Y2}
         end
     end, read_lines(Fn)).
+
+-spec read_one_line_ints(Fn :: string()) -> [integer()].
+read_one_line_ints(Fn) ->
+    [binary_to_integer(I) || I <- read_lines(Fn, [<<$,>>], [global])].
 
 %%-------------------------------------------------------------------
 
