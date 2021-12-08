@@ -10,7 +10,8 @@
     read_cmds/1,
     read_bingo/3,
     read_xy/1,
-    read_one_line_ints/1
+    read_one_line_ints/1,
+    read_7display/1
 ]).
 
 %%-------------------------------------------------------------------
@@ -69,6 +70,14 @@ read_xy(Fn) ->
 -spec read_one_line_ints(Fn :: string()) -> [integer()].
 read_one_line_ints(Fn) ->
     [binary_to_integer(I) || I <- read_lines(Fn, [<<$,>>], [global])].
+
+-spec read_7display(Fn :: string()) -> list({[binary()], [binary()]}).
+read_7display(Fn) ->
+    Lines = read_lines(Fn),
+    lists:map(fun (Line) ->
+        {Ten, [_ | Four]} = lists:splitwith(fun (I) -> I /= <<$|>> end, binary:split(Line, <<32>>, [global, trim_all])),
+        {Ten, Four}
+    end, Lines).
 
 %%-------------------------------------------------------------------
 
