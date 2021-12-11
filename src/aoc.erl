@@ -4,7 +4,7 @@
 
 -module(aoc).
 -export([
-    read_lines/1,
+    read_lines/1, read_lines/3,
     read_ints/1,
     read_bits/1,
     read_cmds/1,
