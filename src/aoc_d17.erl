@@ -5,8 +5,6 @@
 -module(aoc_d17).
 -export([p1/0, p2/0]).
 
--compile(export_all).
-
 -include_lib("eunit/include/eunit.hrl").
 
 %%-------------------------------------------------------------------
