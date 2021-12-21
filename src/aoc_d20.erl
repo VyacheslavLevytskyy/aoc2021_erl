@@ -7,10 +7,6 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--define(AROUND, [{, }, ]).
-
--compile(export_all).
-
 %%-------------------------------------------------------------------
 
 p1() ->
