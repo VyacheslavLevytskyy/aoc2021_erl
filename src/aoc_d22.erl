@@ -59,7 +59,6 @@ account(P, {Sign, Q}, I = {AccL, AccSz}) ->
         [] ->
             I;
         R ->
-            %io:format("Add (~w): ~w~n", [- Sign * sz(R), {- Sign, R}]),
             {[{- Sign, R} | AccL], AccSz - Sign * sz(R)}
     end.
 
