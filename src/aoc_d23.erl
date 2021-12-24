@@ -3,33 +3,37 @@
 %%-------------------------------------------------------------------
 
 -module(aoc_d23).
--export([p1/0, p2/0, sample1/0, sample2/0]).
+-export([p1/0, p2/0,
+         sample1/0, sample2/0,
+         exec_log/3]).
 
 -include_lib("eunit/include/eunit.hrl").
-
--compile(export_all).
 
 %%-------------------------------------------------------------------
 
 p1() ->
-    play(#{{a, 0} => c, {a, 1} => b, {b, 0} => b, {b, 1} => c,
-           {c, 0} => a, {c, 1} => d, {d, 0} => d, {d, 1} => a}, fun map1/1, linear1(), slots1(), 1).
+    play(undefined,
+         #{{a, 0} => c, {a, 1} => b, {b, 0} => b, {b, 1} => c,
+           {c, 0} => a, {c, 1} => d, {d, 0} => d, {d, 1} => a}, fun map1/1, slots1(), 1).
 
 p2() ->
-    play(#{{a, 0} => c, {a, 1} => d, {a, 2} => d, {a, 3} => b,
+    play(undefined,
+         #{{a, 0} => c, {a, 1} => d, {a, 2} => d, {a, 3} => b,
            {b, 0} => b, {b, 1} => c, {b, 2} => b, {b, 3} => c,
            {c, 0} => a, {c, 1} => b, {c, 2} => a, {c, 3} => d,
-           {d, 0} => d, {d, 1} => a, {d, 2} => c, {d, 3} => a}, fun map2/1, linear2(), slots2(), 1).
+           {d, 0} => d, {d, 1} => a, {d, 2} => c, {d, 3} => a}, fun map2/1, slots2(), 3).
 
 sample1() ->
-    play(#{{a, 0} => b, {a, 1} => a, {b, 0} => c, {b, 1} => d,
-           {c, 0} => b, {c, 1} => c, {d, 0} => d, {d, 1} => a}, fun map1/1, linear1(), slots1(), 1).
+    play(undefined,
+         #{{a, 0} => b, {a, 1} => a, {b, 0} => c, {b, 1} => d,
+           {c, 0} => b, {c, 1} => c, {d, 0} => d, {d, 1} => a}, fun map1/1, slots1(), 1).
 
 sample2() ->
-    play(#{{a, 0} => b, {a, 1} => d, {a, 2} => d, {a, 3} => a,
+    play(undefined,
+         #{{a, 0} => b, {a, 1} => d, {a, 2} => d, {a, 3} => a,
            {b, 0} => c, {b, 1} => c, {b, 2} => b, {b, 3} => d,
            {c, 0} => b, {c, 1} => b, {c, 2} => a, {c, 3} => c,
-           {d, 0} => d, {d, 1} => a, {d, 2} => c, {d, 3} => a}, fun map2/1, linear2(), slots2(), 1).
+           {d, 0} => d, {d, 1} => a, {d, 2} => c, {d, 3} => a}, fun map2/1, slots2(), 3).
 
 %%-------------------------------------------------------------------
 %% invariants
@@ -118,13 +122,6 @@ map2(9) -> [8, 10, {d, 0}];
 map2(10) -> [9, 11];
 map2(11) -> [10].
 
-linear1() ->
-    [1, 2, {a, 0}, {a, 1}, 4, {b, 0}, {b, 1}, 6, {c, 0}, {c, 1}, 8, {d, 0}, {d, 1}, 10, 11].
-
-linear2() ->
-    [1, 2, {a, 0}, {a, 1}, {a, 2}, {a, 3}, 4, {b, 0}, {b, 1}, {b, 2}, {b, 3},
-        6, {c, 0}, {c, 1}, {c, 2}, {c, 3}, 8, {d, 0}, {d, 1}, {d, 2}, {d, 3}, 10, 11].
-
 %%-------------------------------------------------------------------
 %% utils
 
@@ -142,27 +139,6 @@ estimate(S, Slots) ->
     end, {0, Goals}, S),
     C.
 
-is_deadlock(S, Linear) ->
-    check_deadlock([{I, maps:get(I, S, [])} || I <- Linear], 0).
-
-check_deadlock([{Num, []} | T], Balance) when is_integer(Num) ->
-    check_deadlock(T, Balance + 1);
-
-check_deadlock([{Num, _} | _], Balance) when is_integer(Num), Balance < 0 ->
-    true;
-
-check_deadlock([{Num, _} | T], _) when is_integer(Num) ->
-    check_deadlock(T, 0);
-
-check_deadlock([{{A1, _}, A2} | T], Balance) when A1 /= A2, A2 /= [] ->
-    check_deadlock(T, Balance - 1);
-
-check_deadlock([{{_, _}, _} | T], Balance) ->
-    check_deadlock(T, Balance);
-
-check_deadlock([], Balance) ->
-    Balance < 0.
-
 branches(_, _, _, _, A, {A, 1}) ->
     [];
 
@@ -179,7 +155,7 @@ branches(Map, Max, Cost, S, A, Pos0) ->
 
 branches1(Map, Max, Cost, S, A, Pos0) ->
     {Stops, _} = paths(Map, Max, S, A, Pos0, Pos0, #{}, []),
-    [{Cost + cost(A, Pos0, Pos2), Pos0, Pos2, A} || Pos2 <- Stops].
+    [{Cost + cost(A, Pos0, Pos2), Pos0, Pos2, A} || Pos2 <- lists:sort(Stops)].
 
 paths(Map, Max, S, A, Pos0, Pos1, Visited, Stops) ->
     lists:foldl(fun (Pos2, Acc = {AccS, AccV}) ->
@@ -195,94 +171,85 @@ paths(Map, Max, S, A, Pos0, Pos1, Visited, Stops) ->
                     {_, No1} when No1 == Max ->
                         paths(Map, Max, S, A, Pos0, Pos2, AccV#{Pos1 => []}, [Pos2 | AccS]);
                     {_, No1} when No1 < Max ->
-                        case [Token || {{T, No2}, Token} <- maps:to_list(S), T == A, No2 > No1] of
-                            [] ->
-                                paths(Map, Max, S, A, Pos0, Pos2, AccV#{Pos1 => []}, AccS);
-                            Below ->
-                                case lists:all(fun (I) -> I == A end, Below) of
-                                    true ->
-                                        paths(Map, Max, S, A, Pos0, Pos2, AccV#{Pos1 => []}, [Pos2 | AccS]);
-                                    false ->
-                                        Acc
-                                end
-                        end
+                        cont_paths(Map, Max, S, A, Pos0, Pos1, Pos2, Acc)
                 end;
             false ->
                 IsOut = is_out(Pos2),
-                CanStop = case {Pos0, Pos2} of
+                case {Pos0, Pos2} of
                     {{T1, _}, {T2, _}} when T1 /= T2, A /= T2 ->
-                        wrong;
-                    _ when IsOut ->
-                        false;
-                    {{_, _}, Num} when is_integer(Num) ->
-                        true;
-                    {{T, _}, {T, _}} ->
-                        false;
-                    {{_, _}, {_, No1}} when No1 == Max ->
-                        true;
-                    {{_, _}, {T, No1}} when A == T, No1 < Max ->
-                        maps:is_key({T, No1 + 1}, S);
-                    {{_, _}, {T, No1}} when A /= T, No1 < Max ->
-                        true
-                end,
-                case CanStop of
-                    wrong ->
                         Acc;
-                    _ ->
-                        paths(Map, Max, S, A, Pos0, Pos2, AccV#{Pos1 => []}, if
-                            CanStop ->
-                                [Pos2 | AccS];
-                            true ->
-                                AccS
-                        end)
+                    _ when IsOut ->
+                        paths(Map, Max, S, A, Pos0, Pos2, AccV#{Pos1 => []}, AccS);
+                    {{_, _}, Num} when is_integer(Num) ->
+                        paths(Map, Max, S, A, Pos0, Pos2, AccV#{Pos1 => []}, [Pos2 | AccS]);
+                    {{T, _}, {T, _}} ->
+                        paths(Map, Max, S, A, Pos0, Pos2, AccV#{Pos1 => []}, AccS);
+                    {{_, _}, {T2, No1}} when A == T2, No1 == Max ->
+                        paths(Map, Max, S, A, Pos0, Pos2, AccV#{Pos1 => []}, [Pos2 | AccS]);
+                    {{_, _}, {T2, No1}} when A == T2, No1 < Max ->
+                        cont_paths(Map, Max, S, A, Pos0, Pos1, Pos2, Acc)
                 end
         end
     end, {Stops, Visited}, Map(Pos1)).
 
-play(Init, Map, Linear, Slots, Max) ->
-    Best = undefined,
-    bnb(Map, Linear, Slots, Max, Best, {Best, []}, [{0, [], Init, #{}}], 0).
+cont_paths(Map, Max, S, A, Pos0, Pos1, Pos2 = {_, No1}, Acc = {AccS, AccV}) ->
+   case [Token || {{T, No2}, Token} <- maps:to_list(S), T == A, No2 > No1] of
+       [] ->
+           paths(Map, Max, S, A, Pos0, Pos2, AccV#{Pos1 => []}, AccS);
+       Below ->
+           case lists:all(fun (I) -> I == A end, Below) of
+               true ->
+                   paths(Map, Max, S, A, Pos0, Pos2, AccV#{Pos1 => []}, [Pos2 | AccS]);
+               false ->
+                   Acc
+           end
+   end.
 
-bnb(Map, Linear, Slots, Max, Best0, Sol = {Best, _}, [{Cost, Log, S, Visited} | Q], Cb) ->
-    case Cb rem 100000 of
-        0 when Cb > 0, Best < 16000 ->
-            io:format("~p: ~p vs ~p~n~p~n~p~nvisited: ~p, q-len: ~p~n~n~n", [Cb, Best, Cost, Log, S, maps:size(Visited), length(Q)]);
+exec_log([{_, From, To, A} | T], S, [C | _] = AccC) ->
+    A = maps:get(From, S),
+    exec_log(T, maps:put(To, A, maps:remove(From, S)), [C + cost(A, From, To) | AccC]);
+
+exec_log([], S, C) ->
+    {S, C}.
+
+%%-------------------------------------------------------------------
+%% branch and bound
+
+play(Guess, Init, Map, Slots, Max) ->
+    Best = Guess,
+    {Cost, _} = bnb(Map, Slots, Max, Best, {Best, []}, [{0, [], Init}], 0, #{}),
+    Cost.
+
+bnb(Map, Slots, Max, Best0, Sol = {Best, _}, [{Cost, Log, S} | Q], Cb, Logs) ->
+    case maps:get(S, Logs, undefined) of
+        BetterCost when is_integer(BetterCost), BetterCost < Cost ->
+            bnb(Map, Slots, Max, Best0, Sol, Q, Cb + 1, Logs);
         _ ->
-            ok
-    end,
-    case is_solution(S) of
-        true when Cost < Best ->
-            io:format("best solution: ~p~n~p~nq-len is ~p~n~n", [Cost, Log, length(Q)]),
-            bnb(Map, Linear, Slots, Max, Best0, {Cost, Log}, Q, Cb + 1);
-        true ->
-            %io:format("sub-optimal solution: ~p~n~p~nq-len is ~p~n~n", [Cost, Log, length(Q)]),
-            bnb(Map, Linear, Slots, Max, Best0, Sol, Q, Cb + 1);
-        _ ->
-            Opts0 = lists:flatten([branches(Map, Max, Cost, S, A, Pos0) || {Pos0, A} <- maps:to_list(S)]),
-            Opts1 = [{C, [I | Log], maps:put(P2, A, maps:remove(P1, S))} || I = {C, P1, P2, A} <- Opts0],
-            Opts2 = [I || I = {C1, _, S1} <- Opts1,
-                C1 + estimate(S1, Slots) =< Best],
-                %not is_deadlock(S1, Linear)],
-            Aux = lists:foldl(fun ({Cost1, Log1, S1}, Acc) ->
-                case maps:is_key(S1, Visited) of
-                    true ->
-                        Acc;
-                    false ->
-                        [{Cost1, Log1, S1, Visited#{S1 => []}} | Acc]
-                        %[{Cost1, Log1, S1, Visited} | Acc]
-                end
-            end, [], Opts2),
-            Q2 = Aux ++ Q,
-            bnb(Map, Linear, Slots, Max, Best0, Sol, Q2, Cb + 1)
+            case is_solution(S) of
+                true when Cost < Best ->
+                    io:format("best solution: ~p~n~p~nq-len is ~p~n~n", [Cost, Log, length(Q)]),
+                    bnb(Map, Slots, Max, Best0, {Cost, Log}, Q, Cb + 1, Logs#{S => Cost});
+                true ->
+                    bnb(Map, Slots, Max, Best0, Sol, Q, Cb + 1, Logs#{S => Cost});
+                _ ->
+                    Opts0 = lists:flatten([branches(Map, Max, Cost, S, A, Pos0) || {Pos0, A} <- maps:to_list(S)]),
+                    Opts1 = [{C, [I | Log], maps:put(P2, A, maps:remove(P1, S))} || I = {C, P1, P2, A} <- Opts0],
+                    Opts2 = [I || I = {C, _, S1} <- Opts1, C + estimate(S1, Slots) =< Best],
+                    bnb(Map, Slots, Max, Best0, Sol, Opts2 ++ Q, Cb + 1, Logs#{S => Cost})
+            end
     end;
 
-bnb(_, _, _, _, _, {Cost, _Log}, [], _) ->
-    Cost.
-    %{Cost, Log}.
+bnb(_, _, _, _, {Cost, Log}, [], _, _) ->
+    {Cost, Log}.
 
 %%-------------------------------------------------------------------
 
 p1_test() ->
-    ?assertEqual(12521, sample1()).
+    ?assertEqual(12521, sample1()),
+    ?assertEqual(11320, p1()).
+
+%p2_test() ->
+%    ?assertEqual(12521, sample2()),
+%    ?assertEqual(49532, p2()).
 
 %%-------------------------------------------------------------------
