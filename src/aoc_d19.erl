@@ -221,7 +221,7 @@ dist(P1, P2) ->
 
 dist_e(P1, P2) ->
     X = math:sqrt(lists:sum([(A - B) * (A - B) || {A, B} <- lists:zip(P1, P2)])),
-    trunc(X * 1000000).
+    trunc(X * 10000).
 
 dist_m(P1, P2) ->
     lists:sum([abs(A - B) || {A, B} <- lists:zip(P1, P2)]).
@@ -251,7 +251,6 @@ parse(Fn) ->
 %%-------------------------------------------------------------------
 
 p12_test() ->
-    ?assertEqual(79, aoc_d19:sample()),
     ?assertEqual(449, aoc_d19:p1()),
     ?assertEqual(13128, aoc_d19:p2()).
 

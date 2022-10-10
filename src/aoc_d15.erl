@@ -106,7 +106,7 @@ p2_test() ->
     ?assertEqual(315, do_p2(aoc:read_lines("day15/sample.txt"))).
 
 p12_test() ->
-    ?assertEqual(390, do_p1(aoc:read_lines("day15/input.txt"))).
-    %?assertEqual(2814, do_p2(aoc:read_lines("day15/input.txt"))).
+    ?assertEqual(390, do_p1(aoc:read_lines("day15/input.txt"))),
+    ?assertEqual(2814, do_p2(aoc:read_lines("day15/input.txt"))).
 
 %%-------------------------------------------------------------------

@@ -101,7 +101,6 @@ p2_test() ->
 
 p12_test() ->
     ?assertEqual(2112, do_p1(aoc:read_lines("day14/input.txt"), 10)),
-    ?assertEqual(2112, do_p2(aoc:read_lines("day14/input.txt"), 10)),
     ?assertEqual(3243771149914, do_p2(aoc:read_lines("day14/input.txt"), 40)).
 
 %%-------------------------------------------------------------------

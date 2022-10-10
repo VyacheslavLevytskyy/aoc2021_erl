@@ -107,7 +107,7 @@ p2_test() ->
 
 p12_test() ->
     ?assertEqual(3912944, p1()),
-    ?assertEqual(3912944, p1()).
+    ?assertEqual(4996233, p2()).
 
 p1_sample() ->
     [

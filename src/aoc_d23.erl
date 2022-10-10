@@ -1,4 +1,4 @@
-%%-------------------------------------------------------------------
+%%------------------------------------------------------------------
 %% @doc Day 23: https://adventofcode.com/2021/day/23
 %%-------------------------------------------------------------------
 
@@ -129,15 +129,45 @@ is_solution(S) ->
     lists:all(fun ({{A, _}, A}) -> true; (_) -> false end, maps:to_list(S)).
 
 estimate(S, Slots) ->
-    Goals = [{A, N} || A <- tokens(), N <- Slots, maps:get({A, N}, S, []) /= A],
+    Tokens = tokens(),
+    Rooms = [{A, N} || A <- Tokens, N <- lists:reverse(Slots)],
+    {Fine, _, _} = lists:foldl(fun (Pos = {A, _}, {AccFine, AccA, Strangers0}) ->
+        {AccA2, Strangers} = case A of
+            AccA ->
+                {AccA, Strangers0};
+            _ ->
+                {A, 0}
+        end,
+        {AccFine2, Strangers2} = case maps:get(Pos, S, []) of
+            [] ->
+                {AccFine, Strangers};
+            A when Strangers > 0 ->
+                {AccFine + 2 * cost(A, Pos, 1 + out(A)), Strangers};
+            A ->
+                {AccFine, Strangers};
+            _ ->
+                {AccFine, 1 + Strangers}
+        end,
+        {AccFine2, AccA2, Strangers2}
+    end, {0, hd(Tokens), 0}, Rooms),
+    Goals = [Pos || Pos = {A, _} <- Rooms, maps:get(Pos, S, []) /= A],
     {C, _} = maps:fold(fun
         ({A, _}, A, Acc) ->
             Acc;
         (From, A, {Sum, AccG}) ->
             {value, To, AccG2} = lists:keytake(A, 1, AccG),
             {Sum + cost(A, From, To), AccG2}
-    end, {0, Goals}, S),
+    end, {Fine, Goals}, S),
     C.
+
+find_at_home([I = {A, _} | _], A) ->
+    I;
+
+find_at_home([_ | T], A) ->
+    find_at_home(T, A);
+
+find_at_home([], _) ->
+    undefined.
 
 branches(_, _, _, _, A, {A, 1}) ->
     [];
@@ -154,8 +184,14 @@ branches(Map, Max, Cost, S, A, Pos0) ->
     branches1(Map, Max, Cost, S, A, Pos0).
 
 branches1(Map, Max, Cost, S, A, Pos0) ->
-    {Stops, _} = paths(Map, Max, S, A, Pos0, Pos0, #{}, []),
-    [{Cost + cost(A, Pos0, Pos2), Pos0, Pos2, A} || Pos2 <- lists:sort(Stops)].
+    {Stops0, _} = paths(Map, Max, S, A, Pos0, Pos0, #{}, []),
+    Stops = case find_at_home(Stops0, A) of
+        undefined ->
+            Stops0;
+        AtHome ->
+            [AtHome]
+    end,
+    [{Cost + cost(A, Pos0, Pos2), Pos0, Pos2, A} || Pos2 <- Stops].
 
 paths(Map, Max, S, A, Pos0, Pos1, Visited, Stops) ->
     lists:foldl(fun (Pos2, Acc = {AccS, AccV}) ->
@@ -216,31 +252,43 @@ exec_log([], S, C) ->
 %% branch and bound
 
 play(Guess, Init, Map, Slots, Max) ->
-    Best = Guess,
-    {Cost, _} = bnb(Map, Slots, Max, Best, {Best, []}, [{0, [], Init}], 0, #{}),
-    Cost.
+    bnb(Map, Slots, Max, Guess, [{0, estimate(Init, Slots), Init}], 0, #{}).
 
-bnb(Map, Slots, Max, Best0, Sol = {Best, _}, [{Cost, Log, S} | Q], Cb, Logs) ->
+bnb(Map, Slots, Max, Best, [{Cost, ECost, S} | Q], Cb, Logs) when ECost < Best ->
     case maps:get(S, Logs, undefined) of
-        BetterCost when is_integer(BetterCost), BetterCost < Cost ->
-            bnb(Map, Slots, Max, Best0, Sol, Q, Cb + 1, Logs);
+        BetterCost when is_integer(BetterCost), BetterCost =< Cost ->
+            bnb(Map, Slots, Max, Best, Q, Cb + 1, Logs);
         _ ->
+            Logs2 = Logs#{S => Cost},
             case is_solution(S) of
                 true when Cost < Best ->
-                    io:format("best solution: ~p~n~p~nq-len is ~p~n~n", [Cost, Log, length(Q)]),
-                    bnb(Map, Slots, Max, Best0, {Cost, Log}, Q, Cb + 1, Logs#{S => Cost});
+                    %%io:format("    new best solution: ~p, q-len: ~p~n", [Cost, length(Q) + 1]),
+                    bnb(Map, Slots, Max, Cost, Q, Cb + 1, Logs2);
                 true ->
-                    bnb(Map, Slots, Max, Best0, Sol, Q, Cb + 1, Logs#{S => Cost});
+                    bnb(Map, Slots, Max, Best, Q, Cb + 1, Logs2);
                 _ ->
-                    Opts0 = lists:flatten([branches(Map, Max, Cost, S, A, Pos0) || {Pos0, A} <- maps:to_list(S)]),
-                    Opts1 = [{C, [I | Log], maps:put(P2, A, maps:remove(P1, S))} || I = {C, P1, P2, A} <- Opts0],
-                    Opts2 = [I || I = {C, _, S1} <- Opts1, C + estimate(S1, Slots) =< Best],
-                    bnb(Map, Slots, Max, Best0, Sol, Opts2 ++ Q, Cb + 1, Logs#{S => Cost})
+                    Opts0 = lists:flatten([branches(Map, Max, Cost, S, A, Pos0) ||
+                        {Pos0, A} <- maps:to_list(S)]),
+                    Opts1 = lists:filtermap(fun ({C, P1, P2, A}) ->
+                        S2 = maps:put(P2, A, maps:remove(P1, S)),
+                        ECost2 = C + estimate(S2, Slots),
+                        if
+                            ECost2 < Best ->
+                                {true, {C, ECost2, S2}};
+                            true ->
+                                false
+                        end
+                    end, Opts0),
+                    Q2 = lists:keysort(2, Opts1) ++ Q,
+                    bnb(Map, Slots, Max, Best, Q2, Cb + 1, Logs2)
             end
     end;
 
-bnb(_, _, _, _, {Cost, Log}, [], _, _) ->
-    {Cost, Log}.
+bnb(Map, Slots, Max, Best, [_ | Q], Cb, Logs) ->
+    bnb(Map, Slots, Max, Best, Q, Cb + 1, Logs);
+
+bnb(_, _, _, BestCost, [], _, _) ->
+    BestCost.
 
 %%-------------------------------------------------------------------
 
@@ -248,8 +296,12 @@ p1_test() ->
     ?assertEqual(12521, sample1()),
     ?assertEqual(11320, p1()).
 
-%p2_test() ->
-%    ?assertEqual(12521, sample2()),
-%    ?assertEqual(49532, p2()).
+p2_test() ->
+    ?assertEqual(12521, sample2()),
+    ?assertEqual(49532, p2()).
+
+p12_test() ->
+    ?assertEqual(11320, p1()),
+    ?assertEqual(49532, p2()).
 
 %%-------------------------------------------------------------------

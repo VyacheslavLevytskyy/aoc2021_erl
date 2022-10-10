@@ -96,7 +96,9 @@ parse_to_map(<<>>, X, _, Acc) ->
 %%-------------------------------------------------------------------
 
 p1_test() ->
-    ?assertEqual(58, move(parse("day25/sample.txt"))),
+    ?assertEqual(58, move(parse("day25/sample.txt"))).
+
+p12_test() ->
     ?assertEqual(414, p1()).
 
 %%-------------------------------------------------------------------

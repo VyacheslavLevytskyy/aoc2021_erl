@@ -3,7 +3,7 @@
 %%-------------------------------------------------------------------
 
 -module(aoc_d13).
--export([p1/0, p2/0]).
+-export([p1/0, p2/0, print/1]).
 
 -include_lib("eunit/include/eunit.hrl").
 
@@ -45,7 +45,8 @@ one_fold(M, {2, Line}) ->
 
 do_p2(L) ->
     {M, Cmds} = parse(L),
-    print(fold(M, Cmds)). % 0 for the sample, KJBKEUBG for the input
+    %%print(fold(M, Cmds)). % 0 for the sample, KJBKEUBG for the input
+    maps:size(fold(M, Cmds)).
 
 print(M) ->
     {Xs, Ys} = lists:unzip(maps:keys(M)),
@@ -87,6 +88,7 @@ p1_test() ->
     ?assertEqual(17, do_p1("day13/sample.txt")).
 
 p12_test() ->
-    ?assertEqual(788, do_p1("day13/input.txt")).
+    ?assertEqual(788, do_p1("day13/input.txt")),
+    ?assertEqual(102, do_p2("day13/input.txt")).
 
 %%-------------------------------------------------------------------

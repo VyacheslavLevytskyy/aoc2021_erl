@@ -16,7 +16,7 @@ p2() ->
     enhance_loop(parse("day20/input.txt"), 50).
 
 sample() ->
-    enhance_loop(parse("day20/sample.txt"), 2).
+    enhance_loop(parse("day20/sample.txt"), 50).
 
 %%-------------------------------------------------------------------
 
@@ -30,14 +30,14 @@ enhance(Mask, Image, N) ->
     {KXs, KYs} = lists:unzip(maps:keys(Image)),
     Xs = lists:seq(lists:min(KXs) - 1, lists:max(KXs) + 1),
     Ys = lists:seq(lists:min(KYs) - 1, lists:max(KYs) + 1),
+    Default = case {Mask band 1, N rem 2} of
+        {1, 1} ->
+            1;
+        _ ->
+            0
+    end,
     lists:foldl(fun (X, Acc1) ->
         lists:foldl(fun (Y, Acc2) ->
-            Default = case {Mask band 1, N rem 2} of
-                {1, 1} ->
-                    1;
-                _ ->
-                    0
-            end,
             Idx = pt_to_int(X, Y, Image, Default),
             V = (Mask band (1 bsl Idx)),
             case V of
@@ -93,8 +93,7 @@ reverse(B) ->
 
 %%-------------------------------------------------------------------
 
-p1_test() ->
-    ?assertEqual(35, enhance_loop(parse("day20/sample.txt"), 2)),
+p12_test() ->
     ?assertEqual(5583, p1()),
     ?assertEqual(19592, p2()).
 
